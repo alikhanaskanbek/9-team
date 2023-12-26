@@ -1,0 +1,49 @@
+import numpy as np
+import cv2
+
+def find_color(imageFrame, hsvFrame, color_range, color_name, color_value):
+    lower = np.array(color_range[0], np.uint8)
+    upper = np.array(color_range[1], np.uint8)
+    color_mask = cv2.inRange(hsvFrame, lower, upper)
+    color_mask = cv2.dilate(color_mask, np.ones((5, 5), "uint8"))
+
+    contours, hierarchy = cv2.findContours(color_mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+    for pic, contour in enumerate(contours):
+        area = cv2.contourArea(contour)
+        if area > 300:
+            x, y, w, h = cv2.boundingRect(contour)
+            imageFrame = cv2.rectangle(imageFrame, (x, y), (x + w, y + h), color_value, 2)
+            cv2.putText(imageFrame, f"{color_name} Colour", (x, y), cv2.FONT_HERSHEY_SIMPLEX, 1.0, color_value)
+    return imageFrame
+
+def main():
+    webcam = cv2.VideoCapture(0)
+
+    while True:
+        _, imageFrame = webcam.read()
+        hsvFrame = cv2.cvtColor(imageFrame, cv2.COLOR_BGR2HSV)
+
+        colors = [
+    ("Red", ([136, 87, 111], [180, 255, 255]), (0, 0, 255)),
+    ("Green", ([25, 52, 72], [102, 255, 255]), (0, 255, 0)),
+    ("Blue", ([94, 80, 2], [120, 255, 255]), (255, 0, 0)),
+    ("Yellow", ([20, 100, 100], [30, 255, 255]), (0, 255, 255)),
+    ("Purple", ([125, 50, 40], [150, 255, 255]), (128, 0, 128)),
+    ("Orange", ([0, 120, 120], [22, 255, 255]), (0, 165, 255)),
+    ("Black", ([0, 0, 0], [180, 255, 30]), (0, 0, 0)),
+    ("Pink", ([140, 100, 100], [170, 255, 255]), (255, 192, 203)),
+    ("White", ([0, 0, 200], [180, 30, 255]), (255, 255, 255)),
+    
+    ]
+
+        for color_name, color_range, color_value in colors:
+            imageFrame = find_color(imageFrame, hsvFrame, color_range, color_name, color_value)
+
+        cv2.imshow("Multiple Color Detection in Real-Time", imageFrame)
+        if cv2.waitKey(10) & 0xFF == ord('q'):
+            webcam.release()
+            cv2.destroyAllWindows()
+            break
+
+if __name__ == '__main__':
+    main()
